@@ -5,6 +5,12 @@ Get endpoints, incidents and alerts from the Cortex XDR API.
 ### Before you begin
 First of all you have to obtain a API Key and API Key ID: [Get Started with Cortex XDR APIs](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-api-overview/get-started-with-cortex-xdr-apis.html)
 
+### Installation
+
+```PowerShell
+Install-Module -Name PSCortex
+```
+
 ### Usage
  Store API Key ID and API Key as `$Credential` and pass it to `Initialize-CortexConfig`.
 ```PowerShell
