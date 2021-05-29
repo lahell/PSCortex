@@ -112,7 +112,7 @@ PrivateData = @{
         ProjectUri = 'https://github.com/lahell/PSCortex'
 
         # A URL to an icon representing this module.
-        # IconUri = ''
+        IconUri = 'https://raw.githubusercontent.com/lahell/PSCortex/master/images/PSCortex.png'
 
         # ReleaseNotes of this module
         # ReleaseNotes = ''
