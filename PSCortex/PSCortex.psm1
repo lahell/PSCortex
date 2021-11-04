@@ -33,6 +33,12 @@ enum CortexAlertSeverity {
     High
     Unknown
 }
+
+enum CortexAuditAgentReportCategory {
+    Status
+    Audit
+    Monitoring
+}
 #endregion
 
 #region classes
@@ -354,6 +360,76 @@ class CortexAlert {
         $this.Source = $Alert.source
         $this.Action = $Alert.action
         $this.ActionPretty = $Alert.action_pretty
+    }
+}
+
+class CortexAuditAgentReport {
+    [DateTime]$Timestamp
+    [DateTime]$ReceivedTime
+    [String]$EndpointId
+    [String]$EndpointName
+    [String]$Domain
+    [String]$XdrVersion
+    [String]$Category
+    [String]$Type
+    [String]$SubType
+    [String]$Result
+    [String]$Reason
+    [String]$Description
+
+    CortexAuditAgentReport(
+        [PSCustomObject]$AuditAgentReport
+    ) {
+        $this.Timestamp = ConvertFrom-UnixTimestamp $AuditAgentReport.TIMESTAMP
+        $this.ReceivedTime = ConvertFrom-UnixTimestamp $AuditAgentReport.RECEIVEDTIME
+        $this.EndpointId = $AuditAgentReport.ENDPOINTID
+        $this.EndpointName = $AuditAgentReport.ENDPOINTNAME
+        $this.Domain = $AuditAgentReport.DOMAIN
+        $this.XdrVersion = $AuditAgentReport.XDRVERSION
+        $this.Category = $AuditAgentReport.CATEGORY
+        $this.Type = $AuditAgentReport.TYPE
+        $this.SubType = $AuditAgentReport.SUBTYPE
+        $this.Result = $AuditAgentReport.RESULT
+        $this.Reason = $AuditAgentReport.REASON
+        $this.Description = $AuditAgentReport.DESCRIPTION
+    }
+}
+
+class CortexAuditManagementLog {
+    [Int]$AuditId
+    [String]$AuditOwnerName
+    [String]$AuditOwnerEmail
+    [String]$AuditAssetJson
+    [String]$AuditAssetNames
+    [String]$AuditHostname
+    [String]$AuditResult
+    [String]$AuditReason
+    [String]$AuditDescription
+    [String]$AuditEntity
+    [String]$AuditEntitySubtype
+    [String]$AuditSessionId
+    [String]$AuditCaseId
+    [String]$AuditInsertTime
+    [String]$AuditSeverity
+
+    CortexAuditManagementLog(
+        [PSCustomObject]$AuditManagementLog
+    ) {
+        $this.AuditId = $AuditManagementLog.AUDIT_ID
+        $this.AuditOwnerName = $AuditManagementLog.AUDIT_OWNER_NAME
+        $this.AuditOwnerEmail = $AuditManagementLog.AUDIT_OWNER_EMAIL
+        $this.AuditAssetJson = $AuditManagementLog.AUDIT_ASSET_JSON
+        $this.AuditAssetNames = $AuditManagementLog.AUDIT_ASSET_NAMES
+        $this.AuditHostname = $AuditManagementLog.AUDIT_HOSTNAME
+        $this.AuditResult = $AuditManagementLog.AUDIT_RESULT
+        $this.AuditReason = $AuditManagementLog.AUDIT_REASON
+        $this.AuditDescription = $AuditManagementLog.AUDIT_DESCRIPTION
+        $this.AuditEntity = $AuditManagementLog.AUDIT_ENTITY
+        $this.AuditEntitySubtype = $AuditManagementLog.AUDIT_ENTITY_SUBTYPE
+        $this.AuditSessionId = $AuditManagementLog.AUDIT_SESSION_ID
+        $this.AuditCaseId = $AuditManagementLog.AUDIT_CASE_ID
+        $this.AuditInsertTime = ConvertFrom-UnixTimestamp $AuditManagementLog.AUDIT_INSERT_TIME
+        $this.AuditSeverity = $AuditManagementLog.AUDIT_SEVERITY
     }
 }
 #endregion
@@ -902,6 +978,176 @@ function Get-CortexAlert {
 
         $Result = Invoke-CortexApiRequest -ApiName alerts -CallName get_alerts_multi_events -Body $Body
         $Result.alerts -as [CortexAlert[]]
+
+        Write-Verbose ($Result | Select-Object result_count, total_count | ConvertTo-Json -Compress)
+
+        $Request.Item('request_data').Item('search_from') += 100
+        $Request.Item('request_data').Item('search_to') += 100
+
+        $SearchFrom = $Request.Item('request_data').Item('search_from')
+        $TotalCount = $Result.total_count
+    }
+}
+
+function Get-CortexAuditAgentReport {
+    [CmdletBinding()]
+    param(
+        [String[]]
+        $EndpointName,
+
+        [CortexAuditAgentReportCategory[]]
+        $Category,
+
+        [DateTime]
+        $CreatedAfter,
+
+        [DateTime]
+        $CreatedBefore
+    )
+
+    $Request = @{
+        request_data = @{
+            search_from = 0
+            search_to   = 100
+            filters     = @()
+            sort        = @{
+                field   = 'timestamp'
+                keyword = 'asc'
+            }
+        }
+    }
+
+    $TotalCount = 0
+    $SearchFrom = 0
+
+    if ($PSBoundParameters.ContainsKey('EndpointName')) {
+        $Filters = @(
+            @{
+                field    = 'endpoint_name'
+                operator = 'in'
+                value    = @($EndpointName)
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+
+    if ($PSBoundParameters.ContainsKey('Category')) {
+        $Filters = @(
+            @{
+                field    = 'category'
+                operator = 'in'
+                value    = @($Category -as [String[]])
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+
+    if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
+        $Filters = @(
+            @{
+                field    = 'timestamp'
+                operator = 'gte'
+                value    = (Get-UnixTimestamp $CreatedAfter)
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+
+    if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
+        $Filters = @(
+            @{
+                field    = 'timestamp'
+                operator = 'lte'
+                value    = (Get-UnixTimestamp $CreatedBefore)
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+    while ($SearchFrom -le $TotalCount) {
+        $Body = $Request | ConvertTo-Json -Depth 4 -Compress
+
+        Write-Verbose $Body
+
+        $Result = Invoke-CortexApiRequest -ApiName audits -CallName agents_reports -Body $Body
+        $Result.data -as [CortexAuditAgentReport[]]
+
+        Write-Verbose ($Result | Select-Object result_count, total_count | ConvertTo-Json -Compress)
+
+        $Request.Item('request_data').Item('search_from') += 100
+        $Request.Item('request_data').Item('search_to') += 100
+
+        $SearchFrom = $Request.Item('request_data').Item('search_from')
+        $TotalCount = $Result.total_count
+    }
+}
+
+function Get-CortexAuditManagementLog {
+    [CmdletBinding()]
+    param(
+        [String[]]
+        $EmailAddress,
+
+        [DateTime]
+        $CreatedAfter,
+
+        [DateTime]
+        $CreatedBefore
+    )
+
+    $Request = @{
+        request_data = @{
+            search_from = 0
+            search_to   = 100
+            filters     = @()
+            sort        = @{
+                field   = 'timestamp'
+                keyword = 'asc'
+            }
+        }
+    }
+
+    $TotalCount = 0
+    $SearchFrom = 0
+
+    if ($PSBoundParameters.ContainsKey('EmailAddress')) {
+        $Filters = @(
+            @{
+                field    = 'email'
+                operator = 'in'
+                value    = @($EmailAddress)
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+
+    if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
+        $Filters = @(
+            @{
+                field    = 'timestamp'
+                operator = 'gte'
+                value    = (Get-UnixTimestamp $CreatedAfter)
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+
+    if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
+        $Filters = @(
+            @{
+                field    = 'timestamp'
+                operator = 'lte'
+                value    = (Get-UnixTimestamp $CreatedBefore)
+            }
+        )
+        $Request.Item('request_data').Item('filters') += $Filters
+    }
+    while ($SearchFrom -le $TotalCount) {
+        $Body = $Request | ConvertTo-Json -Depth 4 -Compress
+
+        Write-Verbose $Body
+
+        $Result = Invoke-CortexApiRequest -ApiName audits -CallName management_logs -Body $Body
+        $Result.data -as [CortexAuditManagementLog[]]
 
         Write-Verbose ($Result | Select-Object result_count, total_count | ConvertTo-Json -Compress)
 
