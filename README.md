@@ -18,23 +18,33 @@ $Credential = Get-Credential
 Initialize-CortexConfig -TenantName yourcompany -SecurityLevel Advanced -Region EU -Credential $Credential
 ```
 
-[Get All Endpoints](https://docs.paloaltonetworks.com/content/techdocs/en_US/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/endpoint-management/get-all-endpoints.html). Returns a list of all endpoints with a limited number of properties.
+[Get All Endpoints](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/endpoint-management/get-all-endpoints.html). Returns a list of all endpoints with a limited number of properties.
 ```PowerShell
 Get-CortexEndpointList
 ```
 
-[Get Endpoints](https://docs.paloaltonetworks.com/content/techdocs/en_US/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/endpoint-management/get-endpoints.html) where status is lost and [Delete Endpoints](https://docs.paloaltonetworks.com/content/techdocs/en_US/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/endpoint-management/delete-endpoints.html). Running `Get-CortexEndpoint` without parameters will return all endpoints.
+[Get Endpoints](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/endpoint-management/get-endpoints.html) where status is lost and [Delete Endpoints](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/endpoint-management/delete-endpoints.html). Running `Get-CortexEndpoint` without parameters will return all endpoints.
 ```PowerShell
 $LostEndpoints = Get-CortexEndpoint -EndpointStatus Lost
 Remove-CortexEndpoint -EndpointId $LostEndpoints.EndpointId -WhatIf
 ```
 
-[Get Incidents](https://docs.paloaltonetworks.com/content/techdocs/en_US/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/incident-management/get-incidents.html). Running `Get-CortexIncident` without parameters will return all incidents.
+[Get Incidents](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/incident-management/get-incidents.html). Running `Get-CortexIncident` without parameters will return all incidents.
 ```PowerShell
 Get-CortexIncident -Status New
 ```
 
-[Get Alerts](https://docs.paloaltonetworks.com/content/techdocs/en_US/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/incident-management/get-alerts.html). Running `Get-CortexAlert` without parameters will return all alerts.
+[Get Alerts](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/incident-management/get-alerts.html). Running `Get-CortexAlert` without parameters will return all alerts.
 ```PowerShell
 Get-CortexAlert -Severity High
+```
+
+[Get Audit Agent Reports](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/audit-logs/get-audit-agent-report.html). Running `Get-CortexAuditAgentReport` without parameters will return all reports.
+```PowerShell
+Get-CortexAuditAgentReport -Category Status
+```
+
+[Get Audit Management Logs](https://docs.paloaltonetworks.com/cortex/cortex-xdr/cortex-xdr-api/cortex-xdr-apis/audit-logs/get-audit-management-log.html). Running `Get-CortexAuditManagementLog` without parameters will return all logs.
+```PowerShell
+Get-CortexAuditManagementLog -CreatedAfter (Get-Date).AddDays(-7)
 ```
