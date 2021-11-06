@@ -632,6 +632,7 @@ function Initialize-CortexConfig {
 }
 
 function Get-CortexEndpointList {
+    [CmdletBinding()]
     [OutputType('CortexEndpointSummary')]
     param()
 
