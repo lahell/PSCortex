@@ -571,7 +571,7 @@ function Get-CortexApiHeader {
     }
 }
 
-function New-CortexUserAgent {
+function Get-CortexUserAgent {
     [CmdletBinding()]
     param()
 
@@ -601,11 +601,34 @@ function Invoke-CortexApiRequest {
 
     $Headers = Get-CortexApiHeader
     $Uri = Get-CortexApiUri -ApiName $ApiName -CallName $CallName
-    $UserAgent = New-CortexUserAgent
+    $UserAgent = Get-CortexUserAgent
 
     Write-Verbose $UserAgent
 
     (Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -UserAgent $UserAgent).reply
+}
+
+function Get-CortexFilter {
+    [CmdletBinding()]
+    [OutputType('System.Collections.Hashtable')]
+    param(
+        [String]$Field,
+        [String]$Operator,
+        [PSObject]$Value
+    )
+
+    $NewValue = switch ($Operator) {
+        'gte' { Get-UnixTimestamp $Value }
+        'lte' { Get-UnixTimestamp $Value }
+        'in'  { ,($Value) }
+        'eq'  { $Value }
+    }
+
+    @{
+        field    = $Field
+        operator = $Operator
+        value    = $NewValue
+    }
 }
 #endregion
 
@@ -668,11 +691,13 @@ function Get-CortexEndpoint {
         $LastSeenBefore
     )
 
+    $Filters = New-Object 'System.Collections.Generic.List[hashtable]'
+
     $Request = @{
         request_data = @{
             search_from = 0
             search_to   = 100
-            filters     = @()
+            filters     = $Filters
             sort        = @{
                 field   = 'endpoint_id'
                 keyword = 'asc'
@@ -684,91 +709,35 @@ function Get-CortexEndpoint {
     $SearchFrom = 0
 
     if ($PSBoundParameters.ContainsKey('EndpointId')) {
-        $Filters = @(
-            @{
-                field    = 'endpoint_id_list'
-                operator = 'in'
-                value    = @($EndpointId)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field endpoint_id_list -Operator in -Value $EndpointId))
     }
 
     if ($PSBoundParameters.ContainsKey('EndpointStatus')) {
-        $Filters = @(
-            @{
-                field    = 'endpoint_status'
-                operator = 'in'
-                value    = @($EndpointStatus -as [String[]])
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field endpoint_status -Operator in -Value ($EndpointStatus -as [String[]])))
     }
 
     if ($PSBoundParameters.ContainsKey('HostName')) {
-        $Filters = @(
-            @{
-                field    = 'hostname'
-                operator = 'in'
-                value    = @($HostName)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field hostname -Operator in -Value $HostName))
     }
 
     if ($PSBoundParameters.ContainsKey('GroupName')) {
-        $Filters = @(
-            @{
-                field    = 'group_name'
-                operator = 'in'
-                value    = @($GroupName)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field group_name -Operator in -Value $GroupName))
     }
 
     if ($PSBoundParameters.ContainsKey('FirstSeenAfter')) {
-        $Filters = @(
-            @{
-                field    = 'first_seen'
-                operator = 'gte'
-                value    = (Get-UnixTimestamp $FirstSeenAfter)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field first_seen -Operator gte -Value $FirstSeenAfter))
     }
 
     if ($PSBoundParameters.ContainsKey('FirstSeenBefore')) {
-        $Filters = @(
-            @{
-                field    = 'first_seen'
-                operator = 'lte'
-                value    = (Get-UnixTimestamp $FirstSeenBefore)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field first_seen -Operator lte -Value $FirstSeenBefore))
     }
 
     if ($PSBoundParameters.ContainsKey('LastSeenAfter')) {
-        $Filters = @(
-            @{
-                field    = 'last_seen'
-                operator = 'gte'
-                value    = (Get-UnixTimestamp $LastSeenAfter)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field last_seen -Operator gte -Value $LastSeenAfter))
     }
 
     if ($PSBoundParameters.ContainsKey('LastSeenBefore')) {
-        $Filters = @(
-            @{
-                field    = 'last_seen'
-                operator = 'lte'
-                value    = (Get-UnixTimestamp $LastSeenBefore)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field last_seen -Operator lte -Value $LastSeenBefore))
     }
 
     while ($SearchFrom -le $TotalCount) {
@@ -838,11 +807,13 @@ function Get-CortexIncident {
         ResolvedOther         = 'resolved_other'
     }
 
+    $Filters = New-Object 'System.Collections.Generic.List[hashtable]'
+
     $Request = @{
         request_data = @{
             search_from = 0
             search_to   = 100
-            filters     = @()
+            filters     = $Filters
             sort        = @{
                 field   = 'creation_time'
                 keyword = 'asc'
@@ -854,36 +825,15 @@ function Get-CortexIncident {
     $SearchFrom = 0
 
     if ($PSBoundParameters.ContainsKey('Status')) {
-        $Filters = @(
-            @{
-                field    = 'status'
-                operator = 'eq'
-                value    = $AllowedStatus[[String]$Status]
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field status -Operator eq -Value $AllowedStatus[[String]$Status]))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
-        $Filters = @(
-            @{
-                field    = 'creation_time'
-                operator = 'gte'
-                value    = (Get-UnixTimestamp $CreatedAfter)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field creation_time -Operator gte -Value $CreatedAfter))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
-        $Filters = @(
-            @{
-                field    = 'creation_time'
-                operator = 'lte'
-                value    = (Get-UnixTimestamp $CreatedBefore)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field creation_time -Operator lte -Value $CreatedBefore))
     }
 
     while ($SearchFrom -le $TotalCount) {
@@ -937,11 +887,13 @@ function Get-CortexAlert {
         $CreatedBefore
     )
 
+    $Filters = New-Object 'System.Collections.Generic.List[hashtable]'
+
     $Request = @{
         request_data = @{
             search_from = 0
             search_to   = 100
-            filters     = @()
+            filters     = $Filters
             sort        = @{
                 field   = 'creation_time'
                 keyword = 'asc'
@@ -953,47 +905,19 @@ function Get-CortexAlert {
     $SearchFrom = 0
 
     if ($PSBoundParameters.ContainsKey('AlertId')) {
-        $Filters = @(
-            @{
-                field    = 'alert_id_list'
-                operator = 'in'
-                value    = @($AlertId)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field alert_id_list -Operator in -Value $AlertId))
     }
 
     if ($PSBoundParameters.ContainsKey('Severity')) {
-        $Filters = @(
-            @{
-                field    = 'severity'
-                operator = 'in'
-                value    = @($Severity -as [String[]])
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field severity -Operator in -Value ($Severity -as [String[]])))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
-        $Filters = @(
-            @{
-                field    = 'creation_time'
-                operator = 'gte'
-                value    = (Get-UnixTimestamp $CreatedAfter)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field creation_time -Operator gte -Value $CreatedAfter))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
-        $Filters = @(
-            @{
-                field    = 'creation_time'
-                operator = 'lte'
-                value    = (Get-UnixTimestamp $CreatedBefore)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field creation_time -Operator lte -Value $CreatedBefore))
     }
 
     while ($SearchFrom -le $TotalCount) {
@@ -1030,11 +954,13 @@ function Get-CortexAuditAgentReport {
         $CreatedBefore
     )
 
+    $Filters = New-Object 'System.Collections.Generic.List[hashtable]'
+
     $Request = @{
         request_data = @{
             search_from = 0
             search_to   = 100
-            filters     = @()
+            filters     = $Filters
             sort        = @{
                 field   = 'timestamp'
                 keyword = 'asc'
@@ -1046,48 +972,21 @@ function Get-CortexAuditAgentReport {
     $SearchFrom = 0
 
     if ($PSBoundParameters.ContainsKey('EndpointName')) {
-        $Filters = @(
-            @{
-                field    = 'endpoint_name'
-                operator = 'in'
-                value    = @($EndpointName)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field endpoint_name -Operator in -Value $EndpointName))
     }
 
     if ($PSBoundParameters.ContainsKey('Category')) {
-        $Filters = @(
-            @{
-                field    = 'category'
-                operator = 'in'
-                value    = @($Category -as [String[]])
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field category -Operator in -Value ($Category -as [String[]])))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
-        $Filters = @(
-            @{
-                field    = 'timestamp'
-                operator = 'gte'
-                value    = (Get-UnixTimestamp $CreatedAfter)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field timestamp -Operator gte -Value $CreatedAfter))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
-        $Filters = @(
-            @{
-                field    = 'timestamp'
-                operator = 'lte'
-                value    = (Get-UnixTimestamp $CreatedBefore)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field timestamp -Operator lte -Value $CreatedBefore))
     }
+
     while ($SearchFrom -le $TotalCount) {
         $Body = $Request | ConvertTo-Json -Depth 4 -Compress
 
@@ -1119,11 +1018,13 @@ function Get-CortexAuditManagementLog {
         $CreatedBefore
     )
 
+    $Filters = New-Object 'System.Collections.Generic.List[hashtable]'
+
     $Request = @{
         request_data = @{
             search_from = 0
             search_to   = 100
-            filters     = @()
+            filters     = $Filters
             sort        = @{
                 field   = 'timestamp'
                 keyword = 'asc'
@@ -1135,37 +1036,17 @@ function Get-CortexAuditManagementLog {
     $SearchFrom = 0
 
     if ($PSBoundParameters.ContainsKey('EmailAddress')) {
-        $Filters = @(
-            @{
-                field    = 'email'
-                operator = 'in'
-                value    = @($EmailAddress)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field email -Operator in -Value $EmailAddress))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
-        $Filters = @(
-            @{
-                field    = 'timestamp'
-                operator = 'gte'
-                value    = (Get-UnixTimestamp $CreatedAfter)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field timestamp -Operator gte -Value $CreatedAfter))
     }
 
     if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
-        $Filters = @(
-            @{
-                field    = 'timestamp'
-                operator = 'lte'
-                value    = (Get-UnixTimestamp $CreatedBefore)
-            }
-        )
-        $Request.Item('request_data').Item('filters') += $Filters
+        $Filters.Add((Get-CortexFilter -Field timestamp -Operator lte -Value $CreatedBefore))
     }
+
     while ($SearchFrom -le $TotalCount) {
         $Body = $Request | ConvertTo-Json -Depth 4 -Compress
 
