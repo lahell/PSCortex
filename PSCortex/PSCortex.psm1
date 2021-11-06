@@ -571,6 +571,26 @@ function Get-CortexApiHeader {
     }
 }
 
+function New-CortexUserAgent {
+    [CmdletBinding()]
+    param()
+
+    $Module = $MyInvocation.MyCommand.ScriptBlock.Module.Name
+    $Version = $MyInvocation.MyCommand.ScriptBlock.Module.Version
+
+    try {
+        $UserAgent = [Microsoft.PowerShell.Commands.PSUserAgent].GetProperty(
+            'UserAgent',
+            [System.Reflection.BindingFlags]::Static -bor
+            [System.Reflection.BindingFlags]::NonPublic
+        ).GetValue([Microsoft.PowerShell.Commands.PSUserAgent])
+    } catch {
+        $UserAgent = $null
+    }
+
+    $UserAgent, "$Module/$Version" -join ' '
+}
+
 function Invoke-CortexApiRequest {
     [CmdletBinding()]
     param(
@@ -581,7 +601,11 @@ function Invoke-CortexApiRequest {
 
     $Headers = Get-CortexApiHeader
     $Uri = Get-CortexApiUri -ApiName $ApiName -CallName $CallName
-    (Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body).reply
+    $UserAgent = New-CortexUserAgent
+
+    Write-Verbose $UserAgent
+
+    (Invoke-RestMethod -Uri $Uri -Method Post -Headers $Headers -Body $Body -UserAgent $UserAgent).reply
 }
 #endregion
 
