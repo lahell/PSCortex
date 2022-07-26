@@ -664,6 +664,28 @@ function Get-CortexEndpointList {
     $Endpoints -as [CortexEndpointSummary[]]
 }
 
+function Get-CortexActiveEndpointList {
+    [CmdletBinding()]
+    [OutputType('CortexEndpointSummary')]
+    param()
+
+    $Endpoints = Get-CortexEndpointList
+    $FilteredEndpoints = $Endpoints | Where-Object { ($_.AgentStatus -eq 'Connected') -or ($_.AgentStatus -eq 'Disconnected') }
+    $FilteredEndpoints -as [CortexEndpointSummary[]]
+        
+}
+
+function Get-CortexInActiveEndpointList {
+    [CmdletBinding()]
+    [OutputType('CortexEndpointSummary')]
+    param()
+
+    $Endpoints = Get-CortexEndpointList
+    $FilteredEndpoints = $Endpoints | Where-Object {($_.AgentStatus -eq 'Lost') -or ($_.AgentStatus -eq 'Uninstalled') }
+    $FilteredEndpoints -as [CortexEndpointSummary[]]
+        
+}
+
 function Get-CortexEndpoint {
     [CmdletBinding()]
     param(
