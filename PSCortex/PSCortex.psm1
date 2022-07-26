@@ -2,6 +2,7 @@
 enum CortexRegion {
     EU
     US
+    DE
 }
 
 enum CortexSecurityLevel {
