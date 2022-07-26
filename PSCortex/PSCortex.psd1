@@ -72,6 +72,8 @@ DotNetFrameworkVersion = '4.6.1'
 FunctionsToExport = @(
     'Initialize-CortexConfig',
     'Get-CortexEndpointList',
+    'Get-CortexActiveEndpointList',
+    'Get-CortexInActiveEndpointList',
     'Get-CortexEndpoint',
     'Remove-CortexEndpoint',
     'Get-CortexIncident',
