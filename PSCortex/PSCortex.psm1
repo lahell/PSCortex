@@ -1,6 +1,14 @@
 ﻿#region enums
 enum CortexRegion {
+    AU
+    CA
+    DE
     EU
+    GV
+    IN
+    JP
+    SG
+    UK
     US
 }
 
