@@ -1,8 +1,15 @@
 ﻿#region enums
 enum CortexRegion {
-    EU
-    US
+    AU
+    CA
     DE
+    EU
+    GV
+    IN
+    JP
+    SG
+    UK
+    US
 }
 
 enum CortexSecurityLevel {
