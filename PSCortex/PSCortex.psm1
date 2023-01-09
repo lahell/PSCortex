@@ -621,7 +621,7 @@ function Get-CortexFilter {
     $NewValue = switch ($Operator) {
         'gte' { Get-UnixTimestamp $Value }
         'lte' { Get-UnixTimestamp $Value }
-        'in'  { ,($Value) }
+        'in'  { ,@($Value) }
         'eq'  { $Value }
     }
 
