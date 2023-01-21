@@ -58,8 +58,8 @@ Get-CortexEndpointList | Group-Object HostName | Where-Object Count -gt 1 | Sele
 ```
 
 ### Use Case: Delete Endpoints that do not exist in AD
-If a computer no longer exist in AD you probably want to remove it from Cortex XDR.
+If the endpoint is uninstalled or lost and the computer no longer exist in AD you probably want to remove it from Cortex XDR.
 ```PowerShell
-$Endpoints = Get-CortexEndpointList | Where-Object HostName -notin (Get-ADComputer -Filter *).Name
+$Endpoints = Get-CortexEndpointList -InactiveOnly | Where-Object HostName -notin (Get-ADComputer -Filter *).Name
 Remove-CortexEndpoint -EndpointId $Endpoints.AgentId -WhatIf
 ```
