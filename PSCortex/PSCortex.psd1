@@ -12,7 +12,7 @@
 RootModule = 'PSCortex'
 
 # Version number of this module.
-ModuleVersion = '0.0.2'
+ModuleVersion = '0.0.3'
 
 # Supported PSEditions
 CompatiblePSEditions = @('Desktop', 'Core')
@@ -27,7 +27,7 @@ Author = 'lahell'
 # CompanyName = ''
 
 # Copyright statement for this module
-Copyright = '(c) 2021 lahell. All rights reserved.'
+Copyright = '(c) 2023 lahell. All rights reserved.'
 
 # Description of the functionality provided by this module
 Description = 'Get endpoints, incidents and alerts from the Cortex XDR API'
