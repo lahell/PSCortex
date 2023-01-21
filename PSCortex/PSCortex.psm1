@@ -78,6 +78,7 @@ class CortexEndpointSummary {
     [String]$AgentType
     [IPAddress[]]$IPAddress
     [DateTime]$LastSeen
+    [String[]]$Users
 
     CortexEndpointSummary(
         [PSCustomObject]$EndpointSummary
@@ -88,6 +89,7 @@ class CortexEndpointSummary {
         $this.AgentType = $EndpointSummary.agent_type
         $this.IPAddress = $EndpointSummary.ip -as [IPAddress[]]
         $this.LastSeen = ConvertFrom-UnixTimestamp $EndpointSummary.last_seen
+        $this.Users = $EndpointSummary.users
     }
 }
 
@@ -97,7 +99,11 @@ class CortexEndpoint {
     [String]$EndpointType
     [String]$EndpointStatus
     [String]$OperatingSystemType
+    [String]$OperatingSystem
+    [Version]$OperatingSystemVersion
     [IPAddress[]]$IPAddress
+    [IPAddress[]]$IPv6Address
+    [IPAddress]$PublicIP
     [String[]]$Users
     [String]$Domain
     [String]$Alias
@@ -114,6 +120,12 @@ class CortexEndpoint {
     [String]$OperationalStatus
     [Object[]]$OperationalStatusDescription
     [String]$ScanStatus
+    [DateTime]$ContentReleaseTimestamp
+    [DateTime]$LastContentUpdateTime
+    [String[]]$MACAddress
+    [String]$AssignedPreventionPolicy
+    [String]$AssignedExtensionsPolicy
+    [String]$ContentStatus
 
     CortexEndpoint(
         [PSCustomObject]$Endpoint
@@ -123,7 +135,11 @@ class CortexEndpoint {
         $this.EndpointType = $Endpoint.endpoint_type
         $this.EndpointStatus = ConvertTo-PascalCase $Endpoint.endpoint_status.ToLower()
         $this.OperatingSystemType = $Endpoint.os_type
+        $this.OperatingSystem = $Endpoint.operating_system
+        $this.OperatingSystemVersion = $Endpoint.os_version
         $this.IPAddress = $Endpoint.ip -as [IPAddress[]]
+        $this.IPv6Address = $Endpoint.ipv6 -as [IPAddress[]]
+        $this.PublicIP = $Endpoint.public_ip -as [IPAddress]
         $this.Users = $Endpoint.users
         $this.Domain = $Endpoint.domain
         $this.Alias = $Endpoint.Alias
@@ -140,6 +156,12 @@ class CortexEndpoint {
         $this.OperationalStatus = $Endpoint.operational_status
         $this.OperationalStatusDescription = $Endpoint.operational_status_description
         $this.ScanStatus = $Endpoint.scan_status
+        $this.ContentReleaseTimestamp = ConvertFrom-UnixTimestamp $Endpoint.content_release_timestamp
+        $this.LastContentUpdateTime = ConvertFrom-UnixTimestamp $Endpoint.last_content_update_time
+        $this.MACAddress = $Endpoint.mac_address
+        $this.AssignedPreventionPolicy = $Endpoint.assigned_prevention_policy
+        $this.AssignedExtensionsPolicy = $Endpoint.assigned_extensions_policy
+        $this.ContentStatus = $Endpoint.content_status
     }
 }
 
