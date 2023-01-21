@@ -685,12 +685,31 @@ function Initialize-CortexConfig {
 }
 
 function Get-CortexEndpointList {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Default')]
     [OutputType('CortexEndpointSummary')]
-    param()
+    param(
+        [Parameter(ParameterSetName = 'Active')]
+        [switch]
+        $ActiveOnly,
 
-    $Endpoints = Invoke-CortexApiRequest -ApiName endpoints -CallName get_endpoints -Body '{}'
-    $Endpoints -as [CortexEndpointSummary[]]
+        [Parameter(ParameterSetName = 'Inactive')]
+        [switch]
+        $InactiveOnly
+    )
+
+    $Endpoints = (Invoke-CortexApiRequest -ApiName endpoints -CallName get_endpoints -Body '{}') -as [CortexEndpointSummary[]]
+
+    switch ($PSCmdlet.ParameterSetName) {
+        'Active' {
+            $Endpoints.Where({$_.AgentStatus -in 'Connected', 'Disconnected'})
+        }
+        'Inactive' {
+            $Endpoints.Where({$_.AgentStatus -in 'Lost', 'Uninstalled'})
+        }
+        'Default' {
+            $Endpoints
+        }
+    }
 }
 
 function Get-CortexEndpoint {
