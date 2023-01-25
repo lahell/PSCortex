@@ -1,3 +1,6 @@
+![PowerShell Gallery Version](https://img.shields.io/powershellgallery/v/PSCortex?color=808000&logo=powershell&logoColor=lightgrey&style=flat-square)
+![PowerShell Gallery](https://img.shields.io/powershellgallery/dt/PSCortex?color=808000&style=flat-square)
+![GitHub](https://img.shields.io/github/license/lahell/PSCortex?color=808000&style=flat-square)
 ## PSCortex
 
 Get endpoints, incidents and alerts from the Cortex XDR API. 
