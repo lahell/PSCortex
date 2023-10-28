@@ -47,6 +47,13 @@ enum CortexAuditAgentReportCategory {
     Audit
     Monitoring
 }
+
+enum CortexViolationType {
+    CdRom
+    DiskDrive
+    FloppyDisk
+    PortableDevice
+}
 #endregion
 
 #region classes
@@ -460,6 +467,38 @@ class CortexAuditManagementLog {
         $this.AuditCaseId = $AuditManagementLog.AUDIT_CASE_ID
         $this.AuditInsertTime = ConvertFrom-UnixTimestamp $AuditManagementLog.AUDIT_INSERT_TIME
         $this.AuditSeverity = $AuditManagementLog.AUDIT_SEVERITY
+    }
+}
+
+class CortexViolation {
+    [String]$HostName
+    [String]$UserName
+    [String]$IPAddress
+    [DateTime]$Timestamp
+    [Int]$ViolationId
+    [String]$Type
+    [String]$VendorId
+    [String]$Vendor
+    [String]$ProductId
+    [String]$Product
+    [String]$Serial
+    [String]$EndpointId
+
+    CortexViolation(
+        [PSCustomObject]$Violation
+    ) {
+        $this.HostName = $Violation.hostname
+        $this.UserName = $Violation.username
+        $this.IPAddress = $Violation.ip
+        $this.Timestamp = ConvertFrom-UnixTimestamp $Violation.timestamp
+        $this.ViolationId = $Violation.violation_id
+        $this.Type = $Violation.type
+        $this.VendorId = $Violation.vendor_id
+        $this.Vendor = $Violation.vendor
+        $this.ProductId = $Violation.product_id
+        $this.Product = $Violation.product
+        $this.Serial = $Violation.serial
+        $this.EndpointId = $Violation.endpoint_id
     }
 }
 #endregion
@@ -1103,6 +1142,87 @@ function Get-CortexAuditManagementLog {
 
         $Result = Invoke-CortexApiRequest -ApiName audits -CallName management_logs -Body $Body
         $Result.data -as [CortexAuditManagementLog[]]
+
+        Write-Verbose ($Result | Select-Object result_count, total_count | ConvertTo-Json -Compress)
+
+        $Request.Item('request_data').Item('search_from') += 100
+        $Request.Item('request_data').Item('search_to') += 100
+
+        $SearchFrom = $Request.Item('request_data').Item('search_from')
+        $TotalCount = $Result.total_count
+    }
+}
+
+function Get-CortexViolation {
+    [CmdletBinding()]
+    param(
+        [String[]]
+        $HostName,
+
+        [CortexViolationType]
+        $Type,
+
+        [String[]]
+        $EndpointId,
+
+        [DateTime]
+        $CreatedAfter,
+
+        [DateTime]
+        $CreatedBefore
+    )
+
+    $AllowedType = @{
+        CdRom          = 'cd-rom'
+        DiskDrive      = 'disk drive'
+        FloppyDisk     = 'floppy disk'
+        PortableDevice = 'windows portable devices'
+    }
+
+    $Filters = New-Object 'System.Collections.Generic.List[hashtable]'
+
+    $Request = @{
+        request_data = @{
+            search_from = 0
+            search_to   = 100
+            filters     = $Filters
+            sort        = @{
+                field   = 'timestamp'
+                keyword = 'asc'
+            }
+        }
+    }
+
+    $TotalCount = 0
+    $SearchFrom = 0
+
+    if ($PSBoundParameters.ContainsKey('HostName')) {
+        $Filters.Add((Get-CortexFilter -Field hostname -Operator in -Value $HostName))
+    }
+
+    if ($PSBoundParameters.ContainsKey('Type')) {
+        $Filters.Add((Get-CortexFilter -Field type -Operator in -Value $AllowedType[[String]$Type]))
+    }
+
+    if ($PSBoundParameters.ContainsKey('EndpointId')) {
+        $Filters.Add((Get-CortexFilter -Field endpoint_id_list -Operator in -Value $EndpointId))
+    }
+
+    if ($PSBoundParameters.ContainsKey('CreatedAfter')) {
+        $Filters.Add((Get-CortexFilter -Field timestamp -Operator gte -Value $CreatedAfter))
+    }
+
+    if ($PSBoundParameters.ContainsKey('CreatedBefore')) {
+        $Filters.Add((Get-CortexFilter -Field timestamp -Operator lte -Value $CreatedBefore))
+    }
+
+    while ($SearchFrom -le $TotalCount) {
+        $Body = $Request | ConvertTo-Json -Depth 4 -Compress
+
+        Write-Verbose $Body
+
+        $Result = Invoke-CortexApiRequest -ApiName device_control -CallName get_violations -Body $Body
+        $Result.violations -as [CortexViolation[]]
 
         Write-Verbose ($Result | Select-Object result_count, total_count | ConvertTo-Json -Compress)
 
