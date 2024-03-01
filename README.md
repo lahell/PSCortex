@@ -3,7 +3,10 @@
 ![GitHub](https://img.shields.io/github/license/lahell/PSCortex?color=808000&style=flat-square)
 ## PSCortex
 
-Get endpoints, incidents and alerts from the Cortex XDR API. 
+Get endpoints, incidents and alerts from the Cortex XDR API.
+
+> [!IMPORTANT]
+> This module is no longer maintained.
 
 ### Before you begin
 First of all you have to obtain a API Key and API Key ID: [Get Started with Cortex XDR APIs](https://docs-cortex.paloaltonetworks.com/r/Cortex-XDR/Cortex-XDR-API-Reference/Get-Started-with-APIs)
